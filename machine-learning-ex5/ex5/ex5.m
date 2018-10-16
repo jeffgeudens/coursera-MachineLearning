@@ -42,6 +42,8 @@ ylabel('Water flowing out of the dam (y)');
 fprintf('Program paused. Press enter to continue.\n');
 pause;
 
+
+
 %% =========== Part 2: Regularized Linear Regression Cost =============
 %  You should now implement the cost function for regularized linear 
 %  regression. 
@@ -164,7 +166,7 @@ pause;
 %  lambda to see how the fit and learning curve change.
 %
 
-lambda = 0;
+lambda = 1.1;
 [theta] = trainLinearReg(X_poly, y, lambda);
 
 % Plot training data and fit
