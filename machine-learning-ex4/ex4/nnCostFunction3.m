@@ -42,21 +42,24 @@ Theta2_grad = zeros(size(Theta2));
 % Make y-matrix with num_label columns
 diagonal = eye(num_labels);
 Y = diagonal(y, :);
+% y_k=zeros(m,num_labels);
+% for i=1:m
+%     y_k(i,y(i))=1;
+% end
 
 % Part 1 - Forward Feed and Cost Function
-a1 = [ones(m,1) X];
+a_1 = [ones(m,1) X]';
 
-z2 = a1 * Theta1' ;
-a2 = [ones(m,1) sigmoid(z2)];
+z_2 = Theta1 * a_1;
+a_2 = [ones(1, m); sigmoid(z_2)];
 
-z3 = a2 * Theta2' ;
-a3 = sigmoid(z3);
-h_theta = a3;
+z_3 = Theta2 * a_2;
+h_theta = sigmoid(z_3);
 
 
-J = -(1/m) * sum( sum( Y.*log(h_theta) + (1-Y).*log(1-h_theta),1) ,2);
+J = 1/m*sum(sum(-y_k'.*log(h_theta)-(1-y_k').*log(1-h_theta),2));
 
-J = J + lambda/(2*m) * (sum( sum(Theta1(:,2:end).^2,2))+...
+J = J+lambda/(2*m)*(sum(sum(Theta1(:,2:end).^2,2))+...
                                 sum(sum(Theta2(:,2:end).^2,2)));
 
 %
@@ -75,15 +78,33 @@ J = J + lambda/(2*m) * (sum( sum(Theta1(:,2:end).^2,2))+...
 %               over the training examples if you are implementing it for the 
 %               first time.
 %
-D1 = zeros(size(Theta1));
-D2 = zeros(size(Theta2));
+Delta1 = zeros(size(Theta1));
+Delta2 = zeros(size(Theta2));
 
-d3 = a3 - Y;
-temp = d3 * Theta2;
-d2 = temp(:, 2:end) .* sigmoidGradient(z2); % layer 2 errors, 5000 * 25, no d2_0
+for t=1:m
+    % Step 1 - Input Values
+    a1 =[1 X(t,:)]';
+    z2 = Theta1 * a1;
+    a2 = [1; sigmoid(z2)];
+    z3 = Theta2 * a2;
+    a3 = sigmoid(z3);
+    
+    % Step 2 - Delta Output Layer
+    d3=a3-y_k(t,:)';
+    
+    % Step 3 - Delta Hidden Layer
+    d2=(Theta2'*d3).*sigmoidGradient([1; z2]);
+    % Strip out bais node from resulting d2
+    d2 = d2(2:end);
+    
+    % Step 4 - Accumulate
+    Delta2 = Delta2 + d3*a2';
+    Delta1 = Delta1 + d2*a1';
+end
 
-D2 = (1/m) * (d3' * a2); % 10 * 26, layer2 partial derivative without the reg term
-D1 = (1/m) * (d2' * a1); % 25 * 401, layer1 partial derivative without the reg term
+% Step 5 - Normal Gradient
+%Theta1_grad = (1 / m) * Delta1;
+%Theta2_grad = (1 / m) * Delta2;
 
 % Part 3: Implement regularization with the cost function and gradients.
 %
@@ -93,13 +114,16 @@ D1 = (1/m) * (d2' * a1); % 25 * 401, layer1 partial derivative without the reg t
 %               and Theta2_grad from Part 2.
 %
 
+
 % Implement for Theta1 and Theta2 when l = 0
-Theta1_grad = D1;
-Theta2_grad = D2;
+Theta1_grad(:,1) = (1 / m) * Delta1(:,1);
+Theta2_grad(:,1) = (1 / m) * Delta2(:,1);
 
 % Implement for Theta1 and Theta 2 when l > 0
-Theta1_grad(:, 2:end) = Theta1_grad(:, 2:end) + (lambda / m) * Theta1(:, 2:end);
-Theta2_grad(:, 2:end) = Theta2_grad(:, 2:end) + (lambda / m) * Theta2(:, 2:end);
+Theta1_grad(:,2:end) = (1 / m) * Delta1(:,2:end)+lambda/m * Theta1(:,2:end);
+Theta2_grad(:,2:end) = (1 / m) * Delta2(:,2:end)+lambda/m * Theta2(:,2:end);
+
+
 
 
 % -------------------------------------------------------------
